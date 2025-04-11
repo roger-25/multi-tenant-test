@@ -1,6 +1,9 @@
 output "eks_cluster_endpoint" {
-  value = module.eks.cluster_endpoint
+  value       = module.eks.cluster_endpoint
+  description = "Endpoint of the EKS cluster"
 }
-output "tfvars_s3_location" {
-  value = aws_s3_object.tfvars.id
+
+output "eks_cluster_name" {
+  value       = var.cluster_name
+  description = "Name of the EKS cluster"
 }

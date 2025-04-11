@@ -1,9 +1,11 @@
 resource "kubernetes_deployment" "nginx" {
+  count = var.create_cluster ? 1 : 0
+
   metadata {
-    name      = "nginx"
+    name      = "nginx-${var.tenant_name}"
     namespace = "default"
     labels = {
-      app = "nginx"
+      app = "nginx-${var.tenant_name}"
     }
   }
 
@@ -12,14 +14,14 @@ resource "kubernetes_deployment" "nginx" {
 
     selector {
       match_labels = {
-        app = "nginx"
+        app = "nginx-${var.tenant_name}"
       }
     }
 
     template {
       metadata {
         labels = {
-          app = "nginx"
+          app = "nginx-${var.tenant_name}"
         }
       }
 
@@ -28,15 +30,8 @@ resource "kubernetes_deployment" "nginx" {
           name  = "nginx"
           image = "nginx:latest"
 
-          resources {
-            limits = {
-              cpu    = "500m"
-              memory = "512Mi"
-            }
-            requests = {
-              cpu    = "200m"
-              memory = "256Mi"
-            }
+          port {
+            container_port = 80
           }
         }
       }

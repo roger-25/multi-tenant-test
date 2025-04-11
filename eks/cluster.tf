@@ -1,22 +1,15 @@
+resource "aws_eks_cluster" "this" {
+  count    = var.create_cluster ? 1 : 0
+  name     = var.cluster_name
+  role_arn = aws_iam_role.eks_cluster_role.arn
 
-# Get data about EXISTING cluster instead of creating new
-data "aws_eks_cluster" "existing" {
-  name = "${var.tenant_env}-${var.tenant_name}-eks" # Must match exact existing name
-}
+  vpc_config {
+    subnet_ids = var.subnet_ids
+  }
 
-data "aws_eks_cluster_auth" "existing" {
-  name = "${var.tenant_env}-${var.tenant_name}-eks"
-}
-
-# Keep IAM role if needed for other operations
-resource "aws_iam_role" "eks" {
-  count = 0 # Disable creation since cluster exists
-  # ... (keep as backup reference) ...
-}
-
-# Kubernetes provider config using existing cluster
-provider "kubernetes" {
-  host                   = data.aws_eks_cluster.existing.endpoint
-  cluster_ca_certificate = base64decode(data.aws_eks_cluster.existing.certificate_authority[0].data)
-  token                  = data.aws_eks_cluster_auth.existing.token
+  tags = {
+    Name        = var.cluster_name
+    Tenant      = var.tenant_name
+    Environment = var.tenant_env
+  }
 }

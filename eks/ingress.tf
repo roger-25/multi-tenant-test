@@ -1,10 +1,11 @@
-resource "kubernetes_ingress_v1" "nginx_ingress" {
+resource "kubernetes_ingress_v1" "nginx" {
+  count = var.create_cluster ? 1 : 0
+
   metadata {
-    name      = "nginx-ingress"
+    name      = "nginx-${var.tenant_name}-ingress"
     namespace = "default"
     annotations = {
-      "kubernetes.io/ingress.class" = "alb"
-      "alb.ingress.kubernetes.io/scheme" = "internet-facing"
+      "nginx.ingress.kubernetes.io/rewrite-target" = "/"
     }
   }
 
@@ -12,12 +13,12 @@ resource "kubernetes_ingress_v1" "nginx_ingress" {
     rule {
       http {
         path {
-          path     = "/*"
-          path_type = "ImplementationSpecific"
+          path     = "/${var.tenant_name}"
+          path_type = "Prefix"
 
           backend {
             service {
-              name = kubernetes_service.nginx_service.metadata[0].name
+              name = "nginx-${var.tenant_name}"
               port {
                 number = 80
               }
