@@ -12,6 +12,7 @@ provider "aws" {
 }
 
 module "eks" {
+  count        = var.create_cluster ? 1 : 0
   source       = "./eks"
   tenant_name  = var.tenant_name
   tenant_env   = var.tenant_env
@@ -20,6 +21,7 @@ module "eks" {
   vpc_id       = try(var.vpc_id, data.terraform_remote_state.network.outputs.vpc_id)
   subnet_ids   = try(var.subnet_ids, data.terraform_remote_state.network.outputs.subnet_ids)
 }
+
 
 locals {
   existing_content = fileexists(var.existing_tfvars_path) ? file(var.existing_tfvars_path) : ""
