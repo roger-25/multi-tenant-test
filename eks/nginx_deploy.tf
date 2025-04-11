@@ -1,38 +1,32 @@
+
 resource "kubernetes_deployment" "nginx" {
-  count = var.create_cluster ? 1 : 0
+  count = 2
 
   metadata {
-    name      = "nginx-${var.tenant_name}"
+    name      = "nginx-${count.index}"
     namespace = "default"
     labels = {
-      app = "nginx-${var.tenant_name}"
+      app = "nginx-${count.index}"
     }
   }
 
   spec {
-    replicas = 2
-
+    replicas = 1
     selector {
       match_labels = {
-        app = "nginx-${var.tenant_name}"
+        app = "nginx-${count.index}"
       }
     }
-
     template {
       metadata {
         labels = {
-          app = "nginx-${var.tenant_name}"
+          app = "nginx-${count.index}"
         }
       }
-
       spec {
         container {
           name  = "nginx"
           image = "nginx:latest"
-
-          port {
-            container_port = 80
-          }
         }
       }
     }
