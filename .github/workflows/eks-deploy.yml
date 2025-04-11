@@ -29,14 +29,14 @@ jobs:
 
     - name: Login to Amazon ECR
       run: |
-        aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin <account-id>.dkr.ecr.$AWS_REGION.amazonaws.com
+        aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 746669234841.dkr.ecr.us-east-1.amazonaws.com/testing/roger
 
     - name: Build and Push Docker Image
       run: |
         IMAGE_NAME=${{ github.event.inputs.tenant }}-${{ github.event.inputs.environment }}-nginx
         docker build -t $IMAGE_NAME .
-        docker tag $IMAGE_NAME:latest <account-id>.dkr.ecr.$AWS_REGION.amazonaws.com/$IMAGE_NAME:latest
-        docker push <account-id>.dkr.ecr.$AWS_REGION.amazonaws.com/$IMAGE_NAME:latest
+        docker tag $IMAGE_NAME:latest 746669234841.dkr.ecr.$AWS_REGION.amazonaws.com/$IMAGE_NAME:latest
+        docker push 746669234841.dkr.ecr.$AWS_REGION.amazonaws.com/$IMAGE_NAME:latest
 
     - name: Set up Terraform
       uses: hashicorp/setup-terraform@v3
