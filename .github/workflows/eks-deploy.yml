@@ -57,10 +57,10 @@ jobs:
 
     - name: Generate tfvars file
       run: |
-        cat > terraform.auto.tfvars <<EOF
-        tenant = "${{ github.event.inputs.tenant }}"
-        environment = "${{ github.event.inputs.environment }}"
-        EOF  
+        cat > tenant-prod.tfvars <<EOF
+    tenant = "${{ github.event.inputs.tenant }}"
+    environment = "${{ github.event.inputs.environment }}"
+    EOF
 
     - name: Terraform Init
       run: |
@@ -72,6 +72,6 @@ jobs:
       run: |
         terraform workspace new ${{ github.event.inputs.tenant }}-${{ github.event.inputs.environment }} || \
         terraform workspace select ${{ github.event.inputs.tenant }}-${{ github.event.inputs.environment }}
-
+    
     - name: Terraform Apply
-      run: terraform apply -auto-approve
+      run: terraform apply -auto-approve -var-file=tenant-prod.tfvars
