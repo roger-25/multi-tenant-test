@@ -21,3 +21,9 @@ variable "subnet_ids" {
   type        = list(string)
   default     = null
 }
+
+variable "ecr_repository_name" {}
+
+variable "create_ecr_repository" {}
+
+variable "image_tag" {}
