@@ -22,6 +22,7 @@ jobs:
     env:
       AWS_REGION: us-east-1
       AWS_ACCOUNT_ID: 746669234841
+      ECR_REPO_URL: 746669234841.dkr.ecr.us-east-1.amazonaws.com/testing/roger
 
     steps:
     - name: Checkout Repo
@@ -34,10 +35,9 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ env.AWS_REGION }}
 
-    # Docker steps remain unchanged
     - name: Login to Amazon ECR
       run: |
-        aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+        aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO_URL
 
     - name: Build Docker Image
       run: |
@@ -46,29 +46,22 @@ jobs:
 
     - name: Tag Docker Image
       run: |
-        IMAGE_NAME=${{ github.event.inputs.tenant }}-${{ github.event.inputs.environment }}-nginx
-        docker tag $IMAGE_NAME $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/testing/${{ github.event.inputs.tenant }}:${{ github.event.inputs.tenant }}-${{ github.event.inputs.environment }}
+        docker tag ${{ github.event.inputs.tenant }}-${{ github.event.inputs.environment }}-nginx $ECR_REPO_URL:${{ github.event.inputs.tenant }}-${{ github.event.inputs.environment }}
 
     - name: Push Docker Image
       run: |
-        docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/testing/${{ github.event.inputs.tenant }}:${{ github.event.inputs.tenant }}-${{ github.event.inputs.environment }}
+        docker push $ECR_REPO_URL:${{ github.event.inputs.tenant }}-${{ github.event.inputs.environment }}
 
+    # Rest of your Terraform steps...
     - name: Set up Terraform
       uses: hashicorp/setup-terraform@v3
 
-    # Improved tfvars generation with proper file handling
     - name: Generate tfvars file
       run: |
-        TFVARS_FILE="${{ github.event.inputs.tenant }}-${{ github.event.inputs.environment }}.tfvars"
-        cat <<EOF > "$TFVARS_FILE"
-        tenant_name     = "${{ github.event.inputs.tenant }}"
-        tenant_env      = "${{ github.event.inputs.environment }}"
-        cluster_name    = "${{ github.event.inputs.tenant }}-${{ github.event.inputs.environment }}-eks"
-        region          = "us-east-1"
-        s3_bucket       = "${{ secrets.TF_STATE_BUCKET }}"
+        cat > ${{ github.event.inputs.tenant }}-${{ github.event.inputs.environment }}.tfvars <<EOF
+        tenant_name = "${{ github.event.inputs.tenant }}"
+        tenant_env = "${{ github.event.inputs.environment }}"
         EOF
-        echo "Generated tfvars file:"
-        cat "$TFVARS_FILE"
 
     - name: Terraform Init
       run: |
@@ -76,11 +69,5 @@ jobs:
                        -backend-config="key=tenants/${{ github.event.inputs.tenant }}/${{ github.event.inputs.environment }}/terraform.tfstate" \
                        -backend-config="region=${{ env.AWS_REGION }}"
 
-    - name: Terraform Workspace
-      run: |
-        terraform workspace new ${{ github.event.inputs.tenant }}-${{ github.event.inputs.environment }} || \
-        terraform workspace select ${{ github.event.inputs.tenant }}-${{ github.event.inputs.environment }}
-
     - name: Terraform Apply
-      run: |
-        terraform apply -auto-approve -var-file=${{ github.event.inputs.tenant }}-${{ github.event.inputs.environment }}.tfvars
+      run: terraform apply -auto-approve -var-file=${{ github.event.inputs.tenant }}-${{ github.event.inputs.environment }}.tfvars

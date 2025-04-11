@@ -23,7 +23,14 @@ variable "subnet_ids" {
 }
 
 variable "ecr_repository_name" {}
-
-variable "create_ecr_repository" {}
-
 variable "image_tag" {}
+
+variable "tenant_name" {
+  description = "Name of the tenant"
+  type        = string
+}
+
+variable "tenant_env" {
+  description = "Tenant environment (dev/uat/prod)"
+  type        = string
+}
