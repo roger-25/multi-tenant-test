@@ -1,0 +1,51 @@
+name: EKS Multi-Tenant CI/CD
+
+on:
+  workflow_dispatch:
+    inputs:
+      tenant:
+        description: 'Tenant Name'
+        required: true
+      environment:
+        description: 'Environment (dev, uat, prod)'
+        required: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      AWS_REGION: us-east-1
+
+    steps:
+    - name: Checkout Repo
+      uses: actions/checkout@v3
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        role-to-assume: arn:aws:iam::123456789012:role/github-actions-role
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Login to Amazon ECR
+      run: |
+        aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin <account-id>.dkr.ecr.$AWS_REGION.amazonaws.com
+
+    - name: Build and Push Docker Image
+      run: |
+        IMAGE_NAME=${{ github.event.inputs.tenant }}-${{ github.event.inputs.environment }}-nginx
+        docker build -t $IMAGE_NAME .
+        docker tag $IMAGE_NAME:latest <account-id>.dkr.ecr.$AWS_REGION.amazonaws.com/$IMAGE_NAME:latest
+        docker push <account-id>.dkr.ecr.$AWS_REGION.amazonaws.com/$IMAGE_NAME:latest
+
+    - name: Set up Terraform
+      uses: hashicorp/setup-terraform@v3
+
+    - name: Terraform Init
+      run: terraform init -backend-config="key=terraform-state/${{ github.event.inputs.tenant }}-${{ github.event.inputs.environment }}/eks.tfstate"
+
+    - name: Terraform Workspace
+      run: |
+        terraform workspace new ${{ github.event.inputs.tenant }}-${{ github.event.inputs.environment }} || terraform workspace select ${{ github.event.inputs.tenant }}-${{ github.event.inputs.environment }}
+
+    - name: Terraform Apply
+      run: terraform apply -var-file="tenant-prod.tfvars" -auto-approve
