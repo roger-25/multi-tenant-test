@@ -44,3 +44,16 @@ resource "aws_s3_object" "tfvars" {
   source = local_file.new_tfvars.filename
   etag   = filemd5(local_file.new_tfvars.filename)
 }
+
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+}
+
+provider "aws" {
+  region = var.region
+}

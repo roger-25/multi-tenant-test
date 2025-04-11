@@ -13,3 +13,8 @@ variable "image_tag" {}
 variable "tenant_name" {}
 
 variable "tenant_env" {}
+
+variable "create_cluster" {
+  type    = bool
+  default = true
+}
