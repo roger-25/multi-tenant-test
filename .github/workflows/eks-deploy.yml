@@ -46,15 +46,15 @@ jobs:
     - name: Tag Docker Image
       run: |
         IMAGE_NAME=${{ github.event.inputs.tenant }}-${{ github.event.inputs.environment }}-nginx
-        docker tag $IMAGE_NAME $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/${{ github.event.inputs.tenant }}/${{ github.event.inputs.environment }}:latest
+        docker tag $IMAGE_NAME $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/testing/roger:${{ github.event.inputs.tenant }}-${{ github.event.inputs.environment }}
 
     - name: Push Docker Image
       run: |
-        docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/${{ github.event.inputs.tenant }}/${{ github.event.inputs.environment }}:latest
+        docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/testing/roger:${{ github.event.inputs.tenant }}-${{ github.event.inputs.environment }}
 
     - name: Set up Terraform
       uses: hashicorp/setup-terraform@v3
-    
+
     - name: Generate tfvars file
       run: |
         cat > terraform.auto.tfvars <<EOF
