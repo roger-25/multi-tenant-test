@@ -15,27 +15,36 @@ jobs:
     runs-on: ubuntu-latest
     env:
       AWS_REGION: us-east-1
+      AWS_ACCOUNT_ID: 746669234841
 
     steps:
     - name: Checkout Repo
       uses: actions/checkout@v3
 
-    - name: Configure AWS Credentials
+    - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v2
       with:
-        role-to-assume: arn:aws:iam::123456789012:role/github-actions-role
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ env.AWS_REGION }}
 
     - name: Login to Amazon ECR
       run: |
-        aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin <account-id>.dkr.ecr.$AWS_REGION.amazonaws.com
+        aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
 
-    - name: Build and Push Docker Image
+    - name: Build Docker Image
       run: |
         IMAGE_NAME=${{ github.event.inputs.tenant }}-${{ github.event.inputs.environment }}-nginx
         docker build -t $IMAGE_NAME .
-        docker tag $IMAGE_NAME:latest <account-id>.dkr.ecr.$AWS_REGION.amazonaws.com/$IMAGE_NAME:latest
-        docker push <account-id>.dkr.ecr.$AWS_REGION.amazonaws.com/$IMAGE_NAME:latest
+
+    - name: Tag Docker Image
+      run: |
+        IMAGE_NAME=${{ github.event.inputs.tenant }}-${{ github.event.inputs.environment }}-nginx
+        docker tag $IMAGE_NAME $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/testing/roger:latest
+
+    - name: Push Docker Image
+      run: |
+        docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/testing/roger:latest
 
     - name: Set up Terraform
       uses: hashicorp/setup-terraform@v3
@@ -48,4 +57,4 @@ jobs:
         terraform workspace new ${{ github.event.inputs.tenant }}-${{ github.event.inputs.environment }} || terraform workspace select ${{ github.event.inputs.tenant }}-${{ github.event.inputs.environment }}
 
     - name: Terraform Apply
-      run: terraform apply -var-file="tenant-prod.tfvars" -auto-approve
+      run: terraform apply -var-file="tenant-${{ github.event.inputs.environment }}.tfvars" -auto-approve
